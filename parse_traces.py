@@ -10,7 +10,6 @@ spanid_fld = 3
 all_annotations_fld = 4
 parentid_fld = 8
 
-trace_file = '1st_half_jan_26'
 
 class Span(object):
     def __init__(self, id, parent, data):
@@ -25,9 +24,17 @@ class Span(object):
                 self.parent = -1
         self.data = data
 
-    def get_url(self):
+
+    def get_annotation_fields(self):
         annotations = self.data[all_annotations_fld]
         fields = re.split(",(?! )", annotations)
+        return fields
+
+    def get_txtype(self, fields):
+        tx_type = fields[3].split(";")[1]
+        return tx_type 
+
+    def get_url(self, fields):
         url = ""
         for f in fields:
             if(re.match("^http\.url.*", f)):
@@ -135,6 +142,7 @@ class ZipkinParser(object):
                 span = Span(spanid, parentid, trace_entry)
                 trace.new_span(span)
 
+
     def traces(self):
         # probably want an iterator here, but not sure how to do that pythonically.
         return self.big_dict.values()                   
@@ -147,7 +155,8 @@ def bucket_by_url(parser):
         root = trace.get_root() 
         
         if(root != 0):
-            url = root.get_url()
+            annotation_fields = root.get_annotation_fields()
+            url = root.get_url(annotation_fields)
             if(not url in buckets):
                 buckets[url] = list()
             buckets[url].append(trace)
@@ -170,17 +179,83 @@ def bucket_by_url(parser):
         
         os.chdir("../..")
 
-      
+
+def bucket_by_url_txtype(parser):
+    buckets = dict()
+    for trace in parser.traces():
+        root = trace.get_root()
+
+        if(root != 0):
+            annotation_fields = root.get_annotation_fields()
+            url = root.get_url(annotation_fields)
+            service = url.split("//")[1].replace("/", "_")
+
+            tx_type = root.get_txtype(annotation_fields)
+            tx_type = tx_type.replace("/", "_") 
+
+            bucket_key = service + tx_type
+            #print "Bucket key: " + bucket_key 
+
+            if(not bucket_key in buckets):
+                buckets[bucket_key] = list()
+            buckets[bucket_key].append(trace)  
+
+    current_dir = os.getcwd()
+    for key, traces in buckets.items():
+        outdir = os.path.join(current_dir, "out/" + key)
+
+        if not os.path.exists(outdir):
+            os.makedirs(outdir)
+
+        os.chdir(outdir)
+        for trace in traces:
+            dot = trace.to_dot()
+            dot.render(trace.id)
+
+        os.chdir("../..")
+
+
+def get_input_file():
+    if(len(sys.argv) < 2):
+        print "usage: " + sys.argv[0] + " input_file.csv"
+        sys.exit()
+
+    trace_file = sys.argv[1]
+    if(not os.path.isfile(trace_file)):
+        print trace_file + " does not exist"
+        sys.exit()
+    
+    return trace_file 
+
+
+def analyze_traces(parser):
+    traces = ["{high: 0, low: 474771886}",
+              "{high: 0, low: -869845681}"]
+
+    for trace in traces:
+        trace_data = parser.big_dict[trace]
+        root_span = trace_data.get_root()
+        
+        fields = root_span.get_annotation_fields()
+        for f in fields:
+            print f
+        print "\n"
+    
+
+trace_file = get_input_file()
 parser = ZipkinParser(trace_file)
  
-goods = 0
-rejects = 0
 
 print("Number of traces: " + str(len(parser.traces())))
-bucket_by_url(parser)
+#bucket_by_url(parser)
+#analyze_traces(parser)
+bucket_by_url_txtype(parser)     
 
 
 '''
+goods = 0
+rejects = 0
+
 for trace in parser.traces():
     if trace.sanity():
         goods += 1

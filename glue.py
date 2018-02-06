@@ -1,7 +1,7 @@
 from ldfi_py.pbool import *
 import ldfi_py.pilp
 import ldfi_py.psat
-from parse_traces import ZipkinParser
+from parsing import ZipkinParser
 import sys, re, os
 
 def get_bucket(trace):

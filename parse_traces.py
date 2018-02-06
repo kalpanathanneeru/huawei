@@ -1,9 +1,13 @@
+#!/usr/bin/python
+
 import csv, sys, json, re
+import os 
 from graphviz import Digraph
 
 
 traceid_fld = 1
 spanid_fld = 3
+all_annotations_fld = 4
 parentid_fld = 8
 
 trace_file = '1st_half_jan_26'
@@ -21,10 +25,21 @@ class Span(object):
                 self.parent = -1
         self.data = data
 
+    def get_url(self):
+        annotations = self.data[all_annotations_fld]
+        fields = re.split(",(?! )", annotations)
+        url = ""
+        for f in fields:
+            if(re.match("^http\.url.*", f)):
+                url = f.split(";")[1]
+                break
+        return url    
+
 class Trace(object):
     def __init__(self, id):
         self.id = id
         self.spans = {}
+        self.root = 0
 
     def new_span(self, span):
         if span.parent == 0:
@@ -40,6 +55,7 @@ class Trace(object):
             if self.spans[spanid].parent != 0:
                 parent = self.spans[spanid].parent
                 if parent not in self.spans.keys():
+                    #commenting out so as to not clutter output for now
                     #print "orphaned id *" + str(parent) + "*"
                     #print "with other ids " + str(self.spans.keys())
                     return False
@@ -47,6 +63,9 @@ class Trace(object):
                 has_root = True
 
         return has_root
+
+    def get_root(self):
+        return self.root 
 
     def root_annotations(self):
         return self.root.data
@@ -119,21 +138,58 @@ class ZipkinParser(object):
     def traces(self):
         # probably want an iterator here, but not sure how to do that pythonically.
         return self.big_dict.values()                   
-                    
+    
+
+
+def bucket_by_url(parser):
+    buckets = dict()
+    for trace in parser.traces():
+        root = trace.get_root() 
+        
+        if(root != 0):
+            url = root.get_url()
+            if(not url in buckets):
+                buckets[url] = list()
+            buckets[url].append(trace)
+
+
+    current_dir = os.getcwd()
+    print "current dir: " + current_dir 
+    for url, traces in buckets.items():
+        service = url.split("//")[1]
+        service = service.replace("/", "_")
+        outdir = os.path.join(current_dir,  "out/" + service)
+        
+        if not os.path.exists(outdir):
+            os.makedirs(outdir)
+        
+        os.chdir(outdir)
+        for trace in traces:
+            dot = trace.to_dot()
+            dot.render(trace.id)
+        
+        os.chdir("../..")
 
       
-#parser = ZipkinParser(trace_file)
+parser = ZipkinParser(trace_file)
  
-#goods = 0
-#rejects = 0
+goods = 0
+rejects = 0
 
-#for trace in parser.traces():
-#    if trace.sanity():
-#        goods += 1
-#        print "ROOT ANNOTATION: " + str(trace.root_annotations())
-#        dot = trace.to_dot()
-#        dot.render(trace.id)
-#    else:
-#        rejects += 1
+print("Number of traces: " + str(len(parser.traces())))
+bucket_by_url(parser)
+
+
+'''
+for trace in parser.traces():
+    if trace.sanity():
+        goods += 1
+        print "ROOT ANNOTATION: " + str(trace.root_annotations())
+        dot = trace.to_dot()
+        dot.render(trace.id)
+    else:
+        rejects += 1
+'''
+
 
 

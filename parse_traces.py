@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import csv, sys, json, re
+import os 
 from graphviz import Digraph
 
 
@@ -126,11 +127,25 @@ def bucket_by_url(parser):
             url = root.get_url()
             if(not url in buckets):
                 buckets[url] = list()
-            buckets[url].append(root)
+            buckets[url].append(trace)
 
-    for key, value in buckets.items():
-        print("{0:64s} | num spans: {1:8d}".format(key, len(value)))
 
+    current_dir = os.getcwd()
+    print "current dir: " + current_dir 
+    for url, traces in buckets.items():
+        service = url.split("//")[1]
+        service = service.replace("/", "_")
+        outdir = os.path.join(current_dir,  "out/" + service)
+        
+        if not os.path.exists(outdir):
+            os.makedirs(outdir)
+        
+        os.chdir(outdir)
+        for trace in traces:
+            dot = trace.to_dot()
+            dot.render(trace.id)
+        
+        os.chdir("../..")
 
       
 parser = ZipkinParser(trace_file)
@@ -138,7 +153,7 @@ parser = ZipkinParser(trace_file)
 goods = 0
 rejects = 0
 
-print("Traces length: " + str(len(parser.traces())))
+print("Number of traces: " + str(len(parser.traces())))
 bucket_by_url(parser)
 
 

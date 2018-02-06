@@ -38,6 +38,7 @@ class Trace(object):
     def __init__(self, id):
         self.id = id
         self.spans = {}
+        self.root = 0
 
     def new_span(self, span):
         if span.parent == 0:
@@ -53,8 +54,9 @@ class Trace(object):
             if self.spans[spanid].parent != 0:
                 parent = self.spans[spanid].parent
                 if parent not in self.spans.keys():
-                    print "orphaned id *" + str(parent) + "*"
-                    print "with other ids " + str(self.spans.keys())
+                    #commenting out so as to not clutter output for now
+                    #print "orphaned id *" + str(parent) + "*"
+                    #print "with other ids " + str(self.spans.keys())
                     return False
             else:
                 has_root = True
@@ -115,9 +117,19 @@ class ZipkinParser(object):
     
 
 
-#def bucket_by_url(traces):
-    
+def bucket_by_url(parser):
+    buckets = dict()
+    for trace in parser.traces():
+        root = trace.get_root() 
+        
+        if(root != 0):
+            url = root.get_url()
+            if(not url in buckets):
+                buckets[url] = list()
+            buckets[url].append(root)
 
+    for key, value in buckets.items():
+        print("{0:64s} | num spans: {1:8d}".format(key, len(value)))
 
 
       
@@ -127,21 +139,19 @@ goods = 0
 rejects = 0
 
 print("Traces length: " + str(len(parser.traces())))
+bucket_by_url(parser)
 
 
+'''
 for trace in parser.traces():
     if trace.sanity():
         goods += 1
-        #print "ROOT ANNOTATION: " + str(trace.root_annotations())
-        #dot = trace.to_dot()
-        #dot.render(trace.id)
-        root = trace.get_root() 
-        url = root.get_url()
-        print "url: " + url 
+        print "ROOT ANNOTATION: " + str(trace.root_annotations())
+        dot = trace.to_dot()
+        dot.render(trace.id)
     else:
         rejects += 1
-
-
+'''
 
 
 

@@ -10,7 +10,6 @@ spanid_fld = 3
 all_annotations_fld = 4
 parentid_fld = 8
 
-trace_file = '1st_half_jan_26'
 
 class Span(object):
     def __init__(self, id, parent, data):
@@ -147,14 +146,29 @@ def bucket_by_url(parser):
         
         os.chdir("../..")
 
-      
+
+def get_input_file():
+    if(len(sys.argv) < 2):
+        print "usage: " + sys.argv[0] + " input_file.csv"
+        sys.exit()
+
+    trace_file = sys.argv[1]
+    if(not os.path.isfile(trace_file)):
+        print trace_file + " does not exist"
+        sys.exit()
+    
+    return trace_file 
+
+
+
+trace_file = get_input_file()
 parser = ZipkinParser(trace_file)
  
 goods = 0
 rejects = 0
 
 print("Number of traces: " + str(len(parser.traces())))
-bucket_by_url(parser)
+#bucket_by_url(parser)
 
 
 '''

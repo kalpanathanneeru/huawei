@@ -1,9 +1,12 @@
+#!/usr/bin/python
+
 import csv, sys, json, re
 from graphviz import Digraph
 
 
 traceid_fld = 1
 spanid_fld = 3
+all_annotations_fld = 4
 parentid_fld = 8
 
 trace_file = '1st_half_jan_26'
@@ -20,6 +23,16 @@ class Span(object):
                 print "BAD value for parentid: " + parent
                 self.parent = -1
         self.data = data
+
+    def get_url(self):
+        annotations = self.data[all_annotations_fld]
+        fields = re.split(",(?! )", annotations)
+        url = ""
+        for f in fields:
+            if(re.match("^http\.url.*", f)):
+                url = f.split(";")[1]
+                break
+        return url    
 
 class Trace(object):
     def __init__(self, id):
@@ -47,6 +60,9 @@ class Trace(object):
                 has_root = True
 
         return has_root
+
+    def get_root(self):
+        return self.root 
 
     def root_annotations(self):
         return self.root.data
@@ -96,7 +112,13 @@ class ZipkinParser(object):
     def traces(self):
         # probably want an iterator here, but not sure how to do that pythonically.
         return self.big_dict.values()                   
-                    
+    
+
+
+#def bucket_by_url(traces):
+    
+
+
 
       
 parser = ZipkinParser(trace_file)
@@ -104,13 +126,22 @@ parser = ZipkinParser(trace_file)
 goods = 0
 rejects = 0
 
+print("Traces length: " + str(len(parser.traces())))
+
+
 for trace in parser.traces():
     if trace.sanity():
         goods += 1
-        print "ROOT ANNOTATION: " + str(trace.root_annotations())
-        dot = trace.to_dot()
-        dot.render(trace.id)
+        #print "ROOT ANNOTATION: " + str(trace.root_annotations())
+        #dot = trace.to_dot()
+        #dot.render(trace.id)
+        root = trace.get_root() 
+        url = root.get_url()
+        print "url: " + url 
     else:
         rejects += 1
+
+
+
 
 

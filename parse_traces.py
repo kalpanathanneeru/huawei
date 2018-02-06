@@ -40,8 +40,8 @@ class Trace(object):
             if self.spans[spanid].parent != 0:
                 parent = self.spans[spanid].parent
                 if parent not in self.spans.keys():
-                    print "orphaned id *" + str(parent) + "*"
-                    print "with other ids " + str(self.spans.keys())
+                    #print "orphaned id *" + str(parent) + "*"
+                    #print "with other ids " + str(self.spans.keys())
                     return False
             else:
                 has_root = True
@@ -51,26 +51,49 @@ class Trace(object):
     def root_annotations(self):
         return self.root.data
 
+    def services(self):
+        svcs = set()
+        for span in self.spans.values():
+            #svc = self.get_servicename(span.data)
+            # more permissive notion of services
+            svc = self.get_label(span.data)
+            if svc is not None:
+                svcs.add(svc)
+        return svcs
+
     def get_servicename(self, data):
         p = re.compile("service_name: '(\S+)',")
         m = p.search(data[5])
         if m is not None:
             return m.group(1)
         else:
-            p = re.compile("serviceType;(\S+)")
-            m = p.search(data[4])
+            return None
+
+    def get_servicetype(self, data):
+        p = re.compile("serviceType;(\S+)")
+        m = p.search(data[4])
+        if m is not None:
+            return m.group(1)
+        else:
+            return None
+
+
+    def get_label(self, data):
+        m = self.get_servicename(data)
+        if m is not None:
+            return m
+        else:
+            m = self.get_servicetype(data)
             if m is not None:
-                return m.group(1)     
+                return m
             else:
                 return "?"
-
-        
 
     def to_dot(self):
         g = Digraph(comment="Callgraph", format = "pdf")
         for n in self.spans.values():
             notes = n.data[4]
-            g.node(str(n.id), self.get_servicename(n.data))
+            g.node(str(n.id), self.get_label(n.data))
 
         for n in self.spans.values():
             g.edge(str(n.parent), str(n.id))
@@ -99,18 +122,18 @@ class ZipkinParser(object):
                     
 
       
-parser = ZipkinParser(trace_file)
+#parser = ZipkinParser(trace_file)
  
-goods = 0
-rejects = 0
+#goods = 0
+#rejects = 0
 
-for trace in parser.traces():
-    if trace.sanity():
-        goods += 1
-        print "ROOT ANNOTATION: " + str(trace.root_annotations())
-        dot = trace.to_dot()
-        dot.render(trace.id)
-    else:
-        rejects += 1
+#for trace in parser.traces():
+#    if trace.sanity():
+#        goods += 1
+#        print "ROOT ANNOTATION: " + str(trace.root_annotations())
+#        dot = trace.to_dot()
+#        dot.render(trace.id)
+#    else:
+#        rejects += 1
 
 

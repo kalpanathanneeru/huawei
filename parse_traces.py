@@ -149,6 +149,23 @@ class ZipkinParser(object):
     
 
 
+def render_traces(buckets):
+    current_dir = os.getcwd()
+    for key, traces in buckets.items():
+        outdir = os.path.join(current_dir, "out/" + key)
+
+        if not os.path.exists(outdir):
+            os.makedirs(outdir)
+
+        os.chdir(outdir)
+        for trace in traces:
+            dot = trace.to_dot()
+            dot.render(trace.id)
+
+        os.chdir("../..")
+
+
+
 def bucket_by_url(parser):
     buckets = dict()
     for trace in parser.traces():
@@ -157,27 +174,14 @@ def bucket_by_url(parser):
         if(root != 0):
             annotation_fields = root.get_annotation_fields()
             url = root.get_url(annotation_fields)
-            if(not url in buckets):
-                buckets[url] = list()
-            buckets[url].append(trace)
+            service = url.split("//")[1].replace("/", "_")
+            if(not service in buckets):
+                buckets[service] = list()
+            buckets[service].append(trace)
+
+    render_traces(buckets)
 
 
-    current_dir = os.getcwd()
-    print "current dir: " + current_dir 
-    for url, traces in buckets.items():
-        service = url.split("//")[1]
-        service = service.replace("/", "_")
-        outdir = os.path.join(current_dir,  "out/" + service)
-        
-        if not os.path.exists(outdir):
-            os.makedirs(outdir)
-        
-        os.chdir(outdir)
-        for trace in traces:
-            dot = trace.to_dot()
-            dot.render(trace.id)
-        
-        os.chdir("../..")
 
 
 def bucket_by_url_txtype(parser):
@@ -194,25 +198,12 @@ def bucket_by_url_txtype(parser):
             tx_type = tx_type.replace("/", "_") 
 
             bucket_key = service + tx_type
-            #print "Bucket key: " + bucket_key 
 
             if(not bucket_key in buckets):
                 buckets[bucket_key] = list()
             buckets[bucket_key].append(trace)  
 
-    current_dir = os.getcwd()
-    for key, traces in buckets.items():
-        outdir = os.path.join(current_dir, "out/" + key)
-
-        if not os.path.exists(outdir):
-            os.makedirs(outdir)
-
-        os.chdir(outdir)
-        for trace in traces:
-            dot = trace.to_dot()
-            dot.render(trace.id)
-
-        os.chdir("../..")
+    render_traces(buckets)
 
 
 def get_input_file():
@@ -229,8 +220,8 @@ def get_input_file():
 
 
 def analyze_traces(parser):
-    traces = ["{high: 0, low: 474771886}",
-              "{high: 0, low: -869845681}"]
+    traces = ["{high: 0, low: -206905875}",
+              "{high: 0, low: -206906078}"]
 
     for trace in traces:
         trace_data = parser.big_dict[trace]
@@ -248,23 +239,7 @@ parser = ZipkinParser(trace_file)
 
 print("Number of traces: " + str(len(parser.traces())))
 #bucket_by_url(parser)
-#analyze_traces(parser)
-bucket_by_url_txtype(parser)     
-
-
-'''
-goods = 0
-rejects = 0
-
-for trace in parser.traces():
-    if trace.sanity():
-        goods += 1
-        print "ROOT ANNOTATION: " + str(trace.root_annotations())
-        dot = trace.to_dot()
-        dot.render(trace.id)
-    else:
-        rejects += 1
-'''
-
+analyze_traces(parser)
+#bucket_by_url_txtype(parser)     
 
 

@@ -11,7 +11,7 @@ all_annotations_fld = 4
 parentid_fld = 8
 
 
-def get_label_old(self, data):
+def get_label_old(data):
     svcarr = data[9].split(":")[1].split("-")
     svcarr.pop()
     return "-".join(svcarr)
@@ -84,13 +84,14 @@ class Trace(object):
     def root_annotations(self):
         return self.root.data
 
-    #def services(self, lmb):
-    def services(self):
+    def services(self, lmb=get_label_old):
+    #def services(self):
         svcs = set()
         for span in self.spans.values():
             #svc = self.get_servicename(span.data)
             # more permissive notion of services
-            svc = self.get_label(span.data)
+            #svc = self.get_label(span.data)
+            svc = lmb(span.data)
             if svc is not None:
                 svcs.add(svc)
         return svcs
@@ -122,7 +123,7 @@ class Trace(object):
             else:
                 return "?"
 
-    def to_dot(self, label=self.get_label):
+    def to_dot(self, label=get_label_old):
         g = Digraph(comment="Callgraph", format = "pdf")
         for n in self.spans.values():
             notes = n.data[4]
@@ -135,7 +136,7 @@ class Trace(object):
 
 
 class ZipkinParser(object):
-    def __init__(self, file, get_label):
+    def __init__(self, file, get_label=get_label_old):
         self.big_dict = {}
         with open(file, 'r') as csvfile:
             for trace_entry in csv.reader(csvfile):

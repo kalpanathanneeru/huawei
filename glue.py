@@ -57,14 +57,14 @@ for key in buckets:
     #    next
     #else: 
     formula = get_formula(buckets[key])
-    dir = key.replace("/", "_")
-    try:
-        os.stat(dir)
-    except:
-        os.mkdir(dir)
+    #dir = key.replace("/", "_")
+    #try:
+    #    os.stat(dir)
+    #except:
+    #    os.mkdir(dir)
 
-    for trace in buckets[key]:
-        trace.to_dot().render(dir + "/" + trace.id)    
+    #for trace in buckets[key]:
+    #    trace.to_dot().render(dir + "/" + trace.id)    
     
 
     print "FORMO " + str(formula)
@@ -79,7 +79,7 @@ for key in buckets:
     #soln = next(s.solutions())
     #print "SOLN is " + str(soln)
     crs = s.solutions()
-    for _ in range(16):
+    for _ in range(3):
         try:
             soln = next(crs)
             print "SOLN is " + str(soln)

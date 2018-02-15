@@ -11,6 +11,12 @@ all_annotations_fld = 4
 parentid_fld = 8
 
 
+def get_label_old(self, data):
+    svcarr = data[9].split(":")[1].split("-")
+    svcarr.pop()
+    return "-".join(svcarr)
+
+
 class Span(object):
     def __init__(self, id, parent, data):
         self.id = id
@@ -43,10 +49,11 @@ class Span(object):
         return url    
 
 class Trace(object):
-    def __init__(self, id):
+    def __init__(self, id, get_label=get_label_old):
         self.id = id
         self.spans = {}
         self.root = 0
+        self.get_label = get_label
 
     def new_span(self, span):
         if span.parent == 0:
@@ -77,6 +84,7 @@ class Trace(object):
     def root_annotations(self):
         return self.root.data
 
+    #def services(self, lmb):
     def services(self):
         svcs = set()
         for span in self.spans.values():
@@ -103,8 +111,7 @@ class Trace(object):
         else:
             return None
 
-
-    def get_label(self, data):
+    def get_label_old2(self, data):
         m = self.get_servicename(data)
         if m is not None:
             return m
@@ -115,11 +122,11 @@ class Trace(object):
             else:
                 return "?"
 
-    def to_dot(self):
+    def to_dot(self, label=self.get_label):
         g = Digraph(comment="Callgraph", format = "pdf")
         for n in self.spans.values():
             notes = n.data[4]
-            g.node(str(n.id), self.get_label(n.data))
+            g.node(str(n.id), label(n.data))
 
         for n in self.spans.values():
             g.edge(str(n.parent), str(n.id))
@@ -128,7 +135,7 @@ class Trace(object):
 
 
 class ZipkinParser(object):
-    def __init__(self, file):
+    def __init__(self, file, get_label):
         self.big_dict = {}
         with open(file, 'r') as csvfile:
             for trace_entry in csv.reader(csvfile):
@@ -136,7 +143,7 @@ class ZipkinParser(object):
                 spanid = trace_entry[spanid_fld]
                 parentid = trace_entry[parentid_fld]
                 if not traceid in self.big_dict:
-                    self.big_dict[traceid] = Trace(traceid)
+                    self.big_dict[traceid] = Trace(traceid, get_label)
 
                 trace = self.big_dict[traceid]
                 span = Span(spanid, parentid, trace_entry)

@@ -42,7 +42,8 @@ def bucket_by_url(parser):
                 buckets[service] = list()
             buckets[service].append(trace)
 
-    render_traces(buckets)
+    return buckets 
+    #render_traces(buckets)
 
 
 
@@ -66,7 +67,8 @@ def bucket_by_url_txtype(parser):
                 buckets[bucket_key] = list()
             buckets[bucket_key].append(trace)  
 
-    render_traces(buckets)
+    return buckets 
+    #render_traces(buckets)
 
 
 def get_input_file():
@@ -96,13 +98,11 @@ def analyze_traces(parser):
         print "\n"
     
 
-trace_file = get_input_file()
-parser = ZipkinParser(trace_file)
- 
-
-print("Number of traces: " + str(len(parser.traces())))
+#trace_file = get_input_file()
+#parser = ZipkinParser(trace_file)
+#print("Number of traces: " + str(len(parser.traces())))
 #bucket_by_url(parser)
-analyze_traces(parser)
+#analyze_traces(parser)
 #bucket_by_url_txtype(parser)     
 
 

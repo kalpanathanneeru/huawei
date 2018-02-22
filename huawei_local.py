@@ -1,6 +1,7 @@
 from parsing import ZipkinParser
 import re
 from ldfi_py.pbool import *
+from parse_traces import bucket_by_url_txtype
 
 def get_bucket(trace):
     data = trace.root_annotations()[4]
@@ -34,6 +35,13 @@ def get_formula(traces, get_label):
 def get_all_buckets(trace_file):
     buckets = {}
     parser = ZipkinParser(trace_file)
+    
+    buckets = bucket_by_url_txtype(parser)
+
+    print "OK"
+    ##
+
+
     for trace in parser.traces():
         if trace.sanity():
             # get bucket -- for now, Tuan says http.url

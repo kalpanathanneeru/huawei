@@ -87,7 +87,7 @@ def bucket_by_url_txtype(parser):
     #render_traces(buckets)
 
 
-def bucket_by_url_txtype(parser):
+def bucket_by_url_txtype_json(parser):
     buckets = dict()
     for trace in parser.traces():
         root = trace.get_root()

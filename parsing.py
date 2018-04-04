@@ -48,6 +48,31 @@ class Span(object):
                 break
         return url    
 
+
+class JsonSpan(object):
+    url_field = 5
+    tx_type_field = 2 
+
+    def __init__(self, id, parent, annotations):
+        self.id = id
+        if parent == "":
+            self.parent = 0
+        else:
+            try:
+                self.parent = parent
+            except Exception:
+                print "BAD value for parentid: " + parent
+                self.parent = -1
+        self.annotations = annotations 
+
+
+    def get_txtype(self):
+        return self.annotations[self.tx_type_field]['value']
+
+    def get_url(self):
+        return self.annotations[self.url_field]['value']
+
+
 class Trace(object):
     def __init__(self, id, get_label=get_label_old):
         self.id = id
@@ -154,4 +179,40 @@ class ZipkinParser(object):
     def traces(self):
         # probably want an iterator here, but not sure how to do that pythonically.
         return self.big_dict.values()                   
-    
+   
+
+class ZipkinJsonParser(object):
+    def __init__(self, file, get_label=get_label_old):
+        self.big_dict = {}
+        with open(file, 'r') as f:
+            for trace_entry in f:
+                data = json.loads(trace_entry)
+                traceid = self.check_retrieve_field("traceId", data)
+                spanid = self.check_retrieve_field("id", data)
+                parentid = self.check_retrieve_field("parentId", data)
+                #print traceid + " | " + spanid + " | " + str(parentid) 
+
+                annotations = data["binaryAnnotations"]
+                #print annotations
+
+                if not traceid in self.big_dict:
+                    self.big_dict[traceid] = Trace(traceid, get_label)
+
+                trace = self.big_dict[traceid]
+                span = JsonSpan(spanid, parentid, annotations)
+                trace.new_span(span)
+
+    def check_retrieve_field(self, key, data):
+        if key not in data:
+            #raise ValueError("Key does not exist")
+            return 0
+        else:
+            return data[key]
+
+
+    def traces(self):
+        # probably want an iterator here, but not sure how to do that pythonically.
+        return self.big_dict.values()               
+
+
+

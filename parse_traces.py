@@ -46,6 +46,22 @@ def bucket_by_url(parser):
     #render_traces(buckets)
 
 
+def bucket_by_url_json(parser):
+    buckets = dict()
+    for trace in parser.traces():
+        root = trace.get_root() 
+        
+        if(root != 0):
+            url = root.get_url()
+            service = url.replace("/", "_")
+            
+            if(not service in buckets):
+                buckets[service] = list()
+            buckets[service].append(trace)
+
+    return buckets 
+    #render_traces(buckets)
+
 
 
 def bucket_by_url_txtype(parser):
@@ -69,6 +85,39 @@ def bucket_by_url_txtype(parser):
 
     return buckets 
     #render_traces(buckets)
+
+
+def bucket_by_url_txtype(parser):
+    buckets = dict()
+    for trace in parser.traces():
+        root = trace.get_root()
+
+        if(root != 0):
+            url = root.get_url()
+            service = url.replace("/", "_")
+            tx_type = root.get_txtype()
+
+            bucket_key = service + tx_type
+
+            if(not bucket_key in buckets):
+                buckets[bucket_key] = list()
+            buckets[bucket_key].append(trace)  
+
+    return buckets 
+    #render_traces(buckets)
+
+
+
+def dump_traces(parser):
+    for trace in parser.traces():
+        root = trace.get_root() 
+        
+        if(root != 0):
+            #annotation_fields = root.get_annotation_fields()
+            url = root.get_url()
+            service = url.replace("/", "_")
+            tx_type = root.get_txtype()
+            #print service + " | " + tx_type + " | " + str(trace.span_cnt()) 
 
 
 def get_input_file():
@@ -96,11 +145,14 @@ def analyze_traces(parser):
         for f in fields:
             print f
         print "\n"
-    
 
-#trace_file = get_input_file()
-#parser = ZipkinParser(trace_file)
-#print("Number of traces: " + str(len(parser.traces())))
+
+
+
+trace_file = get_input_file()
+parser = ZipkinJsonParser(trace_file)
+print("Number of traces: " + str(len(parser.traces())))
+dump_traces(parser)
 #bucket_by_url(parser)
 #analyze_traces(parser)
 #bucket_by_url_txtype(parser)     

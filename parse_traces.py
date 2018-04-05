@@ -149,10 +149,10 @@ def analyze_traces(parser):
 
 
 
-trace_file = get_input_file()
-parser = ZipkinJsonParser(trace_file)
-print("Number of traces: " + str(len(parser.traces())))
-dump_traces(parser)
+#trace_file = get_input_file()
+#parser = ZipkinJsonParser(trace_file)
+#print("Number of traces: " + str(len(parser.traces())))
+#dump_traces(parser)
 #bucket_by_url(parser)
 #analyze_traces(parser)
 #bucket_by_url_txtype(parser)     

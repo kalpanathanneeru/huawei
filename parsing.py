@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import csv, sys, json, re
-import os 
+import os
 from graphviz import Digraph
 
 
@@ -29,7 +29,7 @@ class Span(object):
                 print "BAD value for parentid: " + parent
                 self.parent = -1
         self.data = data
-
+        self.children = []
 
     def get_annotation_fields(self):
         annotations = self.data[all_annotations_fld]
@@ -38,7 +38,7 @@ class Span(object):
 
     def get_txtype(self, fields):
         tx_type = fields[3].split(";")[1]
-        return tx_type 
+        return tx_type
 
     def get_url(self, fields):
         url = ""
@@ -46,12 +46,15 @@ class Span(object):
             if(re.match("^http\.url.*", f)):
                 url = f.split(";")[1]
                 break
-        return url    
+        return url
+
+    def add_child(self, child_span):
+        self.children.append(child_span)
 
 
 class JsonSpan(object):
     url_field = 5
-    tx_type_field = 2 
+    tx_type_field = 2
 
     def __init__(self, id, parent, annotations):
         self.id = id
@@ -63,7 +66,7 @@ class JsonSpan(object):
             except Exception:
                 print "BAD value for parentid: " + parent
                 self.parent = -1
-        self.annotations = annotations 
+        self.annotations = annotations
 
 
     def get_txtype(self):
@@ -85,6 +88,13 @@ class Trace(object):
             self.root = span
         self.spans[span.id] = span
 
+    def add_children(self):
+        for key in self.spans:
+            span = self.spans[key]
+            if span.parent not in [0, -1]:
+                parent_span = self.spans[span.parent]
+                parent_span.add_child(span)
+
     def span_cnt(self):
         return len(self.spans.keys())
 
@@ -104,7 +114,7 @@ class Trace(object):
         return has_root
 
     def get_root(self):
-        return self.root 
+        return self.root
 
     def root_annotations(self):
         return self.root.data
@@ -156,7 +166,7 @@ class Trace(object):
 
         for n in self.spans.values():
             g.edge(str(n.parent), str(n.id))
-            
+
         return g
 
 
@@ -175,11 +185,14 @@ class ZipkinParser(object):
                 span = Span(spanid, parentid, trace_entry)
                 trace.new_span(span)
 
+        for key in self.big_dict:
+            trace = self.big_dict[key]
+            trace.add_children()
 
     def traces(self):
         # probably want an iterator here, but not sure how to do that pythonically.
-        return self.big_dict.values()                   
-   
+        return self.big_dict.values()
+
 
 class ZipkinJsonParser(object):
     def __init__(self, file, get_label=get_label_old):
@@ -190,7 +203,7 @@ class ZipkinJsonParser(object):
                 traceid = self.check_retrieve_field("traceId", data)
                 spanid = self.check_retrieve_field("id", data)
                 parentid = self.check_retrieve_field("parentId", data)
-                #print traceid + " | " + spanid + " | " + str(parentid) 
+                #print traceid + " | " + spanid + " | " + str(parentid)
 
                 annotations = data["binaryAnnotations"]
                 #print annotations
@@ -212,7 +225,7 @@ class ZipkinJsonParser(object):
 
     def traces(self):
         # probably want an iterator here, but not sure how to do that pythonically.
-        return self.big_dict.values()               
+        return self.big_dict.values()
 
 
 

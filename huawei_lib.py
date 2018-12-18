@@ -66,13 +66,11 @@ class Naming(object):
 
     def process_mapping(self, mapping):
         for item in mapping:
-            print "got " + str(item)
             #for i in range(0, len(item[u'oldName'])-1):
             for i in range(0, len(item[u'oldName'])):
                 old = item[u'oldName'][i]
                 new = item[u'newName'][i]
                 # two directions:  when I go fwd looking for the old name I should find the new one...
-                print "map " + old + " to " + new
                 self.fwdmap[old] = new
                 self.reversemap[new] = old
 

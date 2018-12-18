@@ -284,20 +284,32 @@ class ZipkinParser(object):
         return self.dicto.values()
 
 
+def ldfi_solve(tracelist, func):
+    formula = get_formula(tracelist, func)
+    cnf = CNFFormula(formula)
+    s = ldfi_py.pilp.Solver(cnf)
+    crs = s.solutions()
+    ini = crs.next()
+    return ini
 
+
+map_dir = 'maps'
+trace_dir = 'traces'
 
 
 if __name__ == "__main__":
-    naming = Naming()
-    naming.process_file("map.json")
-    #naming.process_file("map.empty")
-
     def gl(data):
         return naming.canonical_name(get_label_2(data))
+
+    naming = Naming()
+    for file in os.listdir():
+        naming.process_file("map.json")
 
     trace_file = 'traces.json'
     trace_file = '20180920102056-20180920112056.json'
     trace_file = 'Intest.json'
+
+    
 
     parser = ZipkinParser(trace_file)
     print("Number of traces: " + str(len(parser.traces())))

@@ -22,5 +22,5 @@
 Place mapping files describing service name changes in maps/ and trace files in traces/.
 
 
-     python huawei.run.py
+     python huawei_run.py
 
